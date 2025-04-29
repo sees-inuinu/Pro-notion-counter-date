@@ -9,11 +9,16 @@ export default async function handler(req, res) {
       database_id: databaseId,
       page_size: 1,
       sorts: [{ property: "日付", direction: "ascending" }],
+      filter: {
+        property: "日付",
+        date: {
+          on_or_after: new Date().toISOString().split("T")[0] // ISO形式で日付だけ
+        }
+      }
     });
 
-    // データベースに結果がない場合
     if (!response.results.length) {
-      return res.status(404).json({ error: "No pages found" });
+      return res.status(404).json({ error: "No upcoming pages found" });
     }
 
     const page = response.results[0];
@@ -23,9 +28,13 @@ export default async function handler(req, res) {
     const start = new Date(startDate);
     const now = new Date();
 
-    // 「未来まであと何日」＝ (start - now)
-    const diffDays = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
-    const remainingDays = diffDays > 0 ? diffDays : 0;
+    // 時間部分を無視して日付の差を計算
+    const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffDays = Math.ceil((startOnly - nowOnly) / (1000 * 60 * 60 * 24));
+
+    const remainingDays = diffDays === 0 ? "today" : diffDays;
 
     res.status(200).json({ days: remainingDays, title });
   } catch (error) {
