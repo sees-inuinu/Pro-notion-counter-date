@@ -19,13 +19,13 @@ export default function Home() {
         position: "absolute", // 親要素をブラウザに固定
         top: "0", // 上にぴったり
         left: "0", // 左にぴったり
-        backgroundColor: "#0D0D0D",
+        backgroundColor: "#DEDEDE",
         opacity: 1,
         backdropFilter: "none",
 filter: "none",
 mixBlendMode: "normal",
         textShadow: "1px 1px 3px rgba(0,0,0,0.5)",
-        color: "#BF3738",
+        color: "#000",
         fontFamily: "'Orbitron', sans-serif",
         padding: "10px",
         borderRadius: "10px",
