@@ -16,7 +16,12 @@ export default function Home() {
   return (
     <div
       style={{
-        backgroundColor: "#1a1a1a",
+        position: "absolute", // 親要素をブラウザに固定
+        top: 0, // 上端にくっつける
+        left: 0, // 左端にくっつける
+        right: 0, // 右端にくっつける
+        bottom: 0, // 下端にくっつける
+        backgroundColor: "#0D0D0D",
         color: "#ffffff",
         fontFamily: "'Orbitron', sans-serif",
         padding: "10px",
