@@ -1,91 +1,109 @@
 import { Client } from "@notionhq/client";
 
-// Notion API クライアントを初期化（認証トークンは環境変数から取得）
+// Notion クライアントの初期化（API トークンは環境変数から取得）
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
 /**
- * Next.js APIルートハンドラー
- * Notion データベースから「今日または未来」のイベントを取得し、
- * 残り日数または「today」というステータスをレスポンスとして返す。
+ * APIルートハンドラー
+ * Notionデータベースから「今日または未来」のイベントを取得し、
+ * イベント開始日までの残り日数、または "today" を返す。
  *
- * @param {import('next').NextApiRequest} req - リクエストオブジェクト
- * @param {import('next').NextApiResponse} res - レスポンスオブジェクト
- * @returns {Promise<void>}
+ * @param {import('next').NextApiRequest} req - HTTPリクエストオブジェクト
+ * @param {import('next').NextApiResponse} res - HTTPレスポンスオブジェクト
+ * @returns {Promise<void>} - 非同期に実行されるAPIレスポンス処理
  */
 export default async function handler(req, res) {
   try {
+    /** @type {string} NotionデータベースID（環境変数から取得） */
     const databaseId = process.env.NOTION_DATABASE_ID;
 
     /**
-     * Notion データベースから「今日以降（今日を含む）」の日付を持つページを取得。
-     * - page_size: 10 にして複数候補を取得（時間が過ぎた「今日」も拾うため）
-     * - date.on_or_after: 今日の日付（時刻なし）でフィルター
+     * Notionデータベースからページを取得
+     * - フィルターは使わず、最大30件を「日付」昇順で取得
+     * - 時刻を考慮せず、「日単位の比較」を行うためフィルターは使用しない
      */
     const response = await notion.databases.query({
       database_id: databaseId,
-      page_size: 10,
+      page_size: 30,
       sorts: [{ property: "日付", direction: "ascending" }],
-      filter: {
-        property: "日付",
-        date: {
-          on_or_after: new Date().toISOString().split("T")[0] // "YYYY-MM-DD"形式のみ
-        }
-      }
     });
 
-    // イベントが1件も見つからなければ 404 エラーを返す
+    // データベースに対象のページがなければ404エラー
     if (!response.results.length) {
-      return res.status(404).json({ error: "No upcoming pages found" });
+      return res.status(404).json({ error: "No pages found" });
     }
 
-    // 現在の日付（時間を切り捨てて日単位にする）
+    /**
+     * 現在の日付（時間部分を00:00に丸める）を取得
+     * @type {Date} 今日の日付（時刻無視）
+     */
     const now = new Date();
-    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     /**
-     * 取得したページから「今日または未来の日付」を持つ最初のページを選ぶ。
-     * 時間が過ぎている「今日」のイベントも対象になるよう、日付のみで比較。
+     * 今日または未来の日付を持つ最初のページを見つける
+     * - 時刻を無視して日付ベースで比較
+     * - 当日のイベントも含める（たとえ時間が過ぎていても）
      */
     const page = response.results.find((page) => {
-      const startDateStr = page.properties["日付"]?.date?.start;
-      if (!startDateStr) return false;
+      /** @type {string | undefined} Notionの「日付」プロパティの開始日時 */
+      const startStr = page.properties["日付"]?.date?.start;
+      if (!startStr) return false;
 
-      const start = new Date(startDateStr);
-      const startDateOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      /** @type {Date} イベントの日付（時刻は無視） */
+      const startDate = new Date(startStr);
+      const startDateOnly = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
 
-      // 今日以降のもの（時間にかかわらず）
-      return startDateOnly >= nowDateOnly;
+      // 今日または未来のイベントなら true
+      return startDateOnly >= today;
     });
 
-    // 今日も未来も該当しない場合は明確に404を返す
+    // 今日以降のイベントが1件もなければ404
     if (!page) {
       return res.status(404).json({ error: "No valid future or today events found" });
     }
 
-    // イベントの開始日とタイトルを取得
-    const startDate = page.properties["日付"].date.start;
+    /** @type {string} イベントの日付（ISO形式） */
+    const startStr = page.properties["日付"].date.start;
+
+    /** @type {string} イベントのタイトル */
     const title = page.properties["名前"].title[0]?.plain_text || "タイトルなし";
 
-    // 開始日を日単位に変換（時間を無視）
-    const start = new Date(startDate);
-    const startDateOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    // イベントの日付（時間を切り捨てた形）
+    const eventDate = new Date(startStr);
+    const eventDateOnly = new Date(
+      eventDate.getFullYear(),
+      eventDate.getMonth(),
+      eventDate.getDate()
+    );
 
     /**
-     * 日数の差分を計算（切り上げ）
-     * - diffDays === 0 の場合は「today」としてレスポンスに含める
+     * 今日からイベント当日までの差分（日数）を算出
+     * @type {number} 残り日数
      */
-    const diffDays = Math.ceil((startDateOnly - nowDateOnly) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+      (eventDateOnly - today) / (1000 * 60 * 60 * 24)
+    );
 
-    // レスポンスオブジェクトの構築
+    /**
+     * 結果のレスポンスオブジェクト
+     * - 当日なら status: "today"
+     * - 未来なら days に残り日数を含める
+     * @type {{ status: string, title: string } | { days: number, title: string }}
+     */
     const result =
       diffDays === 0
-        ? { status: "today", title } // 当日
-        : { days: diffDays + "days", title }; // 未来
+        ? { status: "today", title }
+        : { days: diffDay+"days", title };
 
-    // 結果をクライアントに返す
+    // クライアントに200 OKと結果を返す
     res.status(200).json(result);
   } catch (error) {
-    // 予期しないエラーが発生した場合はログを出力し、500を返す
+    // エラーが発生した場合は500エラーを返し、ログに出力
     console.error("Error fetching data from Notion:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
