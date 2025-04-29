@@ -19,7 +19,7 @@ export default function Home() {
         position: "absolute", // 親要素をブラウザに固定
         top: "0", // 上にぴったり
         left: "0", // 左にぴったり
-        backgroundColor: "#1a1a1a",
+        backgroundColor: "#191919",
         color: "#ffffff",
         fontFamily: "'Orbitron', sans-serif",
         padding: "10px",
