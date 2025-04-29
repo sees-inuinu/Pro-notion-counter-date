@@ -34,7 +34,7 @@ export default function Home() {
         {title}
       </div>
       <div style={{ fontSize: "2rem" }}>
-        {days !== null ? `${days} DAYS` : "Loading..."}
+        {days !== null ? `${days}` : "Loading..."}
       </div>
     </div>
   );
