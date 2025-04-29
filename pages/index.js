@@ -23,7 +23,6 @@ export default function Home() {
         borderRadius: "10px",
         textAlign: "center",
         width: "300px",
-        margin: "20px",
         boxShadow: "0 0 20px rgba(255,255,255,0.1)",
         letterSpacing: "2px"
       }}
