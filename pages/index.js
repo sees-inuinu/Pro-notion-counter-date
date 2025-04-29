@@ -20,7 +20,7 @@ export default function Home() {
         top: "0", // 上にぴったり
         left: "0", // 左にぴったり
         backgroundColor: "#0D0D0D",
-        color: "#ffffff",
+        color: "#BF3738",
         fontFamily: "'Orbitron', sans-serif",
         padding: "10px",
         borderRadius: "10px",
