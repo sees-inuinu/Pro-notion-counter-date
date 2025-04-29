@@ -17,19 +17,17 @@ export default function Home() {
     <div
       style={{
         position: "absolute", // 親要素をブラウザに固定
-        top: 0, // 上端にくっつける
-        left: 0, // 左端にくっつける
-        right: 0, // 右端にくっつける
-        bottom: 0, // 下端にくっつける
-        backgroundColor: "#0D0D0D",
+        top: "0", // 上にぴったり
+        left: "0", // 左にぴったり
+        backgroundColor: "#1a1a1a",
         color: "#ffffff",
         fontFamily: "'Orbitron', sans-serif",
         padding: "10px",
         borderRadius: "10px",
         textAlign: "center",
-        width: "300px",
+        width: "300px", // 幅は固定
         boxShadow: "0 0 20px rgba(255,255,255,0.1)",
-        letterSpacing: "2px"
+        letterSpacing: "2px",
       }}
     >
       <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
